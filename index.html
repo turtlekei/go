@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI3 南港美食 3D 午餐選擇器</title>
+<style>
+  /* 1. CSS Reset & Canvas 全螢幕佈局 */
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#f4f6ff}
+  body{background:radial-gradient(ellipse at 60% 40%,#2b2f6b 0%,#14173a 55%,#0a0b1f 100%)}
+  #canvas-container{position:absolute;inset:0;z-index:0}
+  #canvas-container canvas{display:block;touch-action:none;cursor:grab}
+  #canvas-container canvas:active{cursor:grabbing}
+  .hidden{display:none !important}
+
+  /* 2. 控制面板 UI (Glassmorphism) */
+  #ui-container{position:absolute;inset:0;z-index:2;pointer-events:none}
+  #ui-container>*{pointer-events:auto}
+  header{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;
+    padding:0 20px;gap:10px;font-size:18px;font-weight:700;letter-spacing:.05em;
+    background:rgba(255,255,255,.06);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(255,255,255,.12)}
+  header small{font-weight:400;opacity:.65;font-size:13px;margin-left:auto}
+  .glass{background:rgba(255,255,255,.09);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.18);box-shadow:0 8px 32px rgba(0,0,0,.35)}
+  #sidebar{position:absolute;top:72px;left:16px;width:300px;max-height:calc(100% - 88px);overflow:auto;
+    border-radius:18px;padding:18px}
+  #sidebar h3{font-size:14px;margin:14px 0 8px;color:#ffd166;letter-spacing:.08em}
+  #sidebar h3:first-child{margin-top:0}
+  .opt{display:flex;align-items:center;gap:8px;padding:6px 10px;margin:4px 0;border-radius:10px;
+    cursor:pointer;font-size:14px;transition:background .15s}
+  .opt:hover{background:rgba(255,255,255,.1)}
+  .opt input{accent-color:#ffd166;width:16px;height:16px}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:2px 6px}
+  #count{margin-top:14px;font-size:14px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.25)}
+  #count b{font-size:20px;color:#ffd166}
+  #hint{margin-top:6px;font-size:13px;color:#ff8a8a;min-height:18px}
+  #spinBtn{margin-top:12px;width:100%;padding:14px;font-size:17px;font-weight:700;border:0;border-radius:14px;
+    cursor:pointer;color:#2a1a00;background:linear-gradient(135deg,#ffd166,#ff9f43);
+    box-shadow:0 6px 20px rgba(255,159,67,.45);transition:transform .15s,filter .15s}
+  #spinBtn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08)}
+  #spinBtn:disabled{cursor:not-allowed;filter:grayscale(.9) brightness(.7);box-shadow:none}
+  .note{margin-top:12px;font-size:11px;line-height:1.5;opacity:.55}
+
+  /* 3. 結果彈窗與按鈕樣式 */
+  #result-modal{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;
+    background:rgba(5,6,20,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:16px}
+  .card{width:min(420px,100%);border-radius:24px;padding:28px 26px;text-align:center;
+    background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.07));
+    animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+  .card .label{font-size:13px;letter-spacing:.2em;color:#ffd166}
+  .card h2{font-size:30px;margin:8px 0 12px;line-height:1.25;word-break:break-word}
+  .card .meta{font-size:15px;opacity:.9;margin-bottom:12px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px}
+  .tag{padding:4px 12px;font-size:13px;border-radius:99px;background:rgba(255,209,102,.2);border:1px solid rgba(255,209,102,.5)}
+  .btns{display:flex;flex-direction:column;gap:10px}
+  .btn{display:block;padding:12px;font-size:15px;font-weight:600;border-radius:12px;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.1);color:#fff;cursor:pointer;text-decoration:none;transition:background .15s}
+  .btn:hover{background:rgba(255,255,255,.22)}
+  .btn.primary{background:linear-gradient(135deg,#4ecdc4,#2a9d8f);border:0}
+  .btn.accent{background:linear-gradient(135deg,#ffd166,#ff9f43);color:#2a1a00;border:0}
+  #fatal{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:30px;font-size:16px;line-height:1.7;background:#0a0b1f}
+
+  @media (max-width:820px){
+    header{height:48px;font-size:16px}
+    header small{display:none}
+    #sidebar{top:auto;left:0;right:0;bottom:0;width:100%;max-height:48vh;border-radius:18px 18px 0 0;padding:12px 14px}
+    .chips{grid-template-columns:1fr 1fr 1fr}
+    .note{display:none}
+  }
+</style>
+<!-- 引進 Three.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+  <!-- 3D 畫布容器 -->
+  <div id="canvas-container"></div>
+
+  <!-- 前端篩選 UI 層 -->
+  <div id="ui-container">
+    <header id="header">🍜 AI3 南港午餐 3D 決策器 <small>以 AI3 股份有限公司（南港軟體園區）為中心・半徑 2 公里</small></header>
+
+    <aside id="sidebar" class="glass">
+      <h3>距離選擇</h3>
+      <label class="opt"><input type="radio" name="dist" value="500"> 500 公尺以內（園區內・步行 5 分）</label>
+      <label class="opt"><input type="radio" name="dist" value="1000"> 1 公里以內（車站／捷運周邊）</label>
+      <label class="opt"><input type="radio" name="dist" value="2000" checked> 2 公里以內</label>
+
+      <h3>環境條件</h3>
+      <label class="opt"><input type="checkbox" id="acOnly" checked> ❄️ 必須有冷氣</label>
+
+      <h3>種類（不勾 = 不限）</h3>
+      <div class="chips" id="foodChips"></div>
+
+      <div id="count">符合條件：<b id="countNum">0</b> 間</div>
+      <div id="hint"></div>
+      <button id="spinBtn" type="button">🎲 開始決策！</button>
+      <p class="note">拖曳轉盤可手動旋轉。距離為由 AI3 起算的概略估計，出發前請以 Google 地圖與店家營業資訊為準。</p>
+    </aside>
+  </div>
+
+  <!-- 結果彈窗層 -->
+  <div id="result-modal" class="hidden" role="dialog" aria-modal="true">
+    <div class="card glass">
+      <div class="label">今天中午就吃</div>
+      <h2 id="rName"></h2>
+      <div class="meta" id="rMeta"></div>
+      <div class="tags" id="rTags"></div>
+      <div class="btns">
+        <a class="btn primary" id="rMap" target="_blank" rel="noopener">📍 開啟 Google 地圖導航</a>
+        <button class="btn accent" id="rAgain" type="button">🔁 不滿意，再抽一次</button>
+        <button class="btn" id="rRefilter" type="button">⚙️ 重新篩選</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ===== 1. 餐廳資料庫 (AI3 方圓 2km 內清單) =====
+     距離為概略估計（公尺）。可自行新增／修改，格式與規格書 Data Schema 相同。 */
+  var mapUrl = function (q) {
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q + ' 台北市南港區');
+  };
+  var RESTAURANTS = [
+    { id: 'rest_001', name: '樂法 Le Phu', distanceMeters: 300, hasAC: true,
+      categories: ['漢堡/美式', '健康餐/沙拉'], priceRange: '$' },
+    { id: 'rest_002', name: '朱記餡餅粥店 (南港環球店)', distanceMeters: 1200, hasAC: true,
+      categories: ['麵', '飯', '鍋貼/水餃'], priceRange: '$$' },
+    { id: 'rest_003', name: '麻布茶房 南港中信店', distanceMeters: 550, hasAC: true,
+      categories: ['飯'], priceRange: '$$' },
+    { id: 'rest_004', name: 'gonna 共樂遊 南港店', distanceMeters: 550, hasAC: true,
+      categories: ['健康餐/沙拉', '麵'], priceRange: '$$' },
+    { id: 'rest_005', name: 'Coppii Lumii 冉冉生活', distanceMeters: 700, hasAC: true,
+      categories: ['漢堡/美式', '麵'], priceRange: '$$' },
+    { id: 'rest_006', name: '涮嘴 南港店 (臭臭鍋)', distanceMeters: 800, hasAC: true,
+      categories: ['湯包/小吃', '飯'], priceRange: '$' },
+    { id: 'rest_007', name: '林聰明沙鍋魚頭 (LaLaport)', distanceMeters: 400, hasAC: true,
+      categories: ['湯包/小吃', '飯'], priceRange: '$$' },
+    { id: 'rest_008', name: '韓美膳 Hanbijae (LaLaport)', distanceMeters: 400, hasAC: true,
+      categories: ['飯'], priceRange: '$$' },
+    { id: 'rest_009', name: '漢來上海湯包 (LaLaport)', distanceMeters: 400, hasAC: true,
+      categories: ['湯包/小吃', '麵'], priceRange: '$$$' },
+    { id: 'rest_010', name: '米與多蜜 (LaLaport)', distanceMeters: 400, hasAC: true,
+      categories: ['漢堡/美式', '飯'], priceRange: '$$' },
+    { id: 'rest_011', name: '福喜滿豬腳排骨 (LaLaport)', distanceMeters: 400, hasAC: true,
+      categories: ['飯', '湯包/小吃'], priceRange: '$$' },
+    { id: 'rest_012', name: '京昌園 燒肉 (LaLaport)', distanceMeters: 400, hasAC: true,
+      categories: ['飯'], priceRange: '$$$' }
+  ];
+  RESTAURANTS.forEach(function (r) { if (!r.googleMapUrl) r.googleMapUrl = mapUrl(r.name); });
+
+  var FOOD_TYPES = ['麵', '飯', '鍋貼/水餃', '漢堡/美式', '湯包/小吃', '健康餐/沙拉'];
+
+  /* ===== DOM ===== */
+  var $ = function (id) { return document.getElementById(id); };
+
+  function fatal(msg) {
+    var d = document.createElement('div');
+    d.id = 'fatal';
+    d.innerHTML = msg;
+    document.body.appendChild(d);
+  }
+  if (typeof THREE === 'undefined') {
+    fatal('無法載入 Three.js（CDN）。<br>請確認網路連線後重新整理頁面。');
+    return;
+  }
+
+  /* ===== 2. Three.js 場景、相機、渲染器、燈光初始化 ===== */
+  var R = 3, CAM_Z = 11, FOV = 40;
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  } catch (e) {
+    fatal('此瀏覽器未啟用 WebGL，無法顯示 3D 轉盤。<br>請改用 Chrome / Edge / Safari / Firefox 並啟用 WebGL。');
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  $('canvas-container').appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
+  camera.position.set(0, 0, CAM_Z);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+  dirLight.position.set(-4, 6, 10);
+  scene.add(dirLight);
+  var rimLight = new THREE.PointLight(0x8fb4ff, 0.6, 40);
+  rimLight.position.set(6, -4, 6);
+  scene.add(rimLight);
+
+  var stage = new THREE.Group();   // 整體（定位／縮放／視差傾斜）
+  var wheel = new THREE.Group();   // 會旋轉的扇形與文字
+  scene.add(stage);
+  stage.add(wheel);
+
+  // 靜態外框：底座、金屬外圈、中心軸、指針
+  var gold = new THREE.MeshStandardMaterial({ color: 0xffc94d, metalness: 0.8, roughness: 0.3 });
+  var baseGeo = new THREE.CylinderGeometry(R + 0.14, R + 0.14, 0.4, 72);
+  baseGeo.rotateX(Math.PI / 2);
+  var base = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0x1b1d3f, metalness: 0.5, roughness: 0.5 }));
+  base.position.z = -0.22;
+  stage.add(base);
+  var rim = new THREE.Mesh(new THREE.TorusGeometry(R + 0.06, 0.11, 16, 96), gold);
+  rim.position.z = 0.02;
+  stage.add(rim);
+  var hubGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.3, 32);
+  hubGeo.rotateX(Math.PI / 2);
+  var hub = new THREE.Mesh(hubGeo, gold);
+  hub.position.z = 0.15;
+  stage.add(hub);
+  var pointer = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 24),
+    new THREE.MeshStandardMaterial({ color: 0xff4757, metalness: 0.3, roughness: 0.35, emissive: 0x550010 }));
+  pointer.rotation.z = Math.PI;                // 尖端朝下
+  pointer.position.set(0, R + 0.28, 0.35);
+  stage.add(pointer);
+
+  /* ===== 3. 動態 3D 輪盤生成 (Canvas 文字貼圖) ===== */
+  var sectors = [];     // 每片扇形的 mesh
+  var currentItems = [];
+
+  function makeLabel(text) {
+    var c = document.createElement('canvas');
+    c.width = 512; c.height = 128;
+    var ctx = c.getContext('2d');
+    var lines;
+    var m = text.match(/^(.*?)\s*[\(（](.*)[\)）]\s*$/);
+    if (m) lines = [m[1], m[2]];
+    else if (text.length > 9 && text.indexOf(' ') > 0) {
+      var i = text.indexOf(' ');
+      lines = [text.slice(0, i), text.slice(i + 1)];
+    } else lines = [text];
+    var base = lines.length === 2 ? 52 : 76;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    lines.forEach(function (ln, idx) {
+      var size = base;
+      ctx.font = '700 ' + size + 'px "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+      var w = ctx.measureText(ln).width;
+      if (w > 470) { size = Math.floor(size * 470 / w); ctx.font = '700 ' + size + 'px "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif'; }
+      var y = lines.length === 2 ? 36 + idx * 56 : 64;
+      ctx.lineWidth = Math.max(4, size / 7);
+      ctx.strokeStyle = 'rgba(0,0,0,.55)';
+      ctx.strokeText(ln, 256, y);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(ln, 256, y);
+    });
+    var tex = new THREE.CanvasTexture(c);
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  function disposeWheel() {
+    while (wheel.children.length) {
+      var o = wheel.children[0];
+      wheel.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        if (o.material.map) o.material.map.dispose();
+        o.material.dispose();
+      }
+    }
+    sectors = [];
+  }
+
+  function buildWheel(items) {
+    disposeWheel();
+    var empty = items.length === 0;
+    var list = empty ? [{ name: '無符合條件' }] : items;
+    var n = list.length;
+    var step = Math.PI * 2 / n;
+    var labelH = Math.min(0.55, 2 * R * 0.6 * Math.tan(Math.min(step, 3) / 2) * 0.8);
+    list.forEach(function (it, i) {
+      var color = empty ? new THREE.Color(0x555a78)
+        : new THREE.Color().setHSL((i * 0.618033988) % 1, 0.62, 0.48);
+      var geo = new THREE.CircleGeometry(R, Math.max(8, Math.ceil(72 / n)), i * step, step);
+      var mat = new THREE.MeshStandardMaterial({
+        color: color, roughness: 0.45, metalness: 0.15, side: THREE.DoubleSide,
+        emissive: 0xffffff, emissiveIntensity: 0
+      });
+      var mesh = new THREE.Mesh(geo, mat);
+      wheel.add(mesh);
+      sectors.push(mesh);
+
+      var mid = (i + 0.5) * step;
+      var lab = new THREE.Mesh(
+        new THREE.PlaneGeometry(labelH * 4, labelH),
+        new THREE.MeshBasicMaterial({ map: makeLabel(it.name), transparent: true, depthWrite: false })
+      );
+      lab.position.set(Math.cos(mid) * R * 0.6, Math.sin(mid) * R * 0.6, 0.03);
+      lab.rotation.z = mid;
+      wheel.add(lab);
+
+      if (n > 1) {
+        var lg = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0.02),
+          new THREE.Vector3(Math.cos(i * step) * R, Math.sin(i * step) * R, 0.02)
+        ]);
+        wheel.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })));
+      }
+    });
+  }
+
+  /* ===== 4. 篩選條件過濾邏輯 ===== */
+  var filtered = [];
+  var spinning = false;
+
+  (function buildChips() {
+    var box = $('foodChips');
+    FOOD_TYPES.forEach(function (t) {
+      var l = document.createElement('label');
+      l.className = 'opt';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.value = t; cb.checked = true; cb.className = 'ft';
+      l.appendChild(cb);
+      l.appendChild(document.createTextNode(' ' + t));
+      box.appendChild(l);
+    });
+  })();
+
+  function readFilters() {
+    var dist = 2000;
+    document.querySelectorAll('input[name=dist]').forEach(function (r) { if (r.checked) dist = +r.value; });
+    var types = [];
+    document.querySelectorAll('.ft').forEach(function (c) { if (c.checked) types.push(c.value); });
+    return { dist: dist, ac: $('acOnly').checked, types: types };
+  }
+
+  function applyFilters() {
+    var f = readFilters();
+    filtered = RESTAURANTS.filter(function (r) {
+      if (r.distanceMeters > f.dist) return false;
+      if (f.ac && !r.hasAC) return false;
+      if (f.types.length && !r.categories.some(function (c) { return f.types.indexOf(c) >= 0; })) return false;
+      return true;
+    });
+    $('countNum').textContent = filtered.length;
+    $('hint').textContent = filtered.length ? '' : '沒有符合條件的餐廳，請放寬篩選條件。';
+    $('spinBtn').disabled = spinning || filtered.length === 0;
+    if (!spinning) buildWheel(filtered);
+  }
+
+  function setControlsEnabled(on) {
+    document.querySelectorAll('#sidebar input').forEach(function (i) { i.disabled = !on; });
+    $('spinBtn').disabled = !on || filtered.length === 0;
+  }
+
+  document.querySelectorAll('#sidebar input').forEach(function (i) { i.addEventListener('change', applyFilters); });
+
+  /* ===== 5. 轉動動畫與 Ease-Out 演算法 ===== */
+  var easeOutCubic = function (t) { return 1 - Math.pow(1 - t, 3); };
+  var SPIN_MS = 3000;
+  var spinAnim = null;
+
+  function spin() {
+    if (spinning || !filtered.length) return;
+    spinning = true;
+    hideModal();
+    setControlsEnabled(false);
+    sectors.forEach(function (s) { s.material.emissiveIntensity = 0; });
+
+    var n = filtered.length;
+    var step = Math.PI * 2 / n;
+    var k = Math.floor(Math.random() * n);
+    var jitter = (Math.random() - 0.5) * step * 0.7;       // 停在扇形內隨機位置
+    var base = Math.PI / 2 - ((k + 0.5) * step + jitter);  // 指針在 12 點鐘方向
+    var r0 = wheel.rotation.z;
+    var m = Math.ceil((base - r0 + Math.PI * 2 * 4) / (Math.PI * 2)); // 至少 4 圈（順時針）
+    var r1 = base - Math.PI * 2 * m;
+    spinAnim = { t0: performance.now(), r0: r0, r1: r1, k: k };
+  }
+
+  function finishSpin(k) {
+    spinning = false;
+    wheel.rotation.z = wheel.rotation.z % (Math.PI * 2);
+    if (sectors[k]) sectors[k].material.emissiveIntensity = 0.35;
+    launchConfetti();
+    setControlsEnabled(true);
+    setTimeout(function () { showResult(filtered[k]); }, 700);
+  }
+
+  /* 3D 粒子效果 (Confetti) */
+  var confetti = [];
+  function launchConfetti() {
+    var COUNT = 240;
+    var pos = new Float32Array(COUNT * 3), col = new Float32Array(COUNT * 3);
+    var vel = [];
+    var origin = new THREE.Vector3(stage.position.x, stage.position.y + R * stage.scale.x * 0.6, 1.5);
+    for (var i = 0; i < COUNT; i++) {
+      pos[i * 3] = origin.x; pos[i * 3 + 1] = origin.y; pos[i * 3 + 2] = origin.z;
+      var c = new THREE.Color().setHSL(Math.random(), 0.9, 0.6);
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+      var a = Math.PI / 2 + (Math.random() - 0.5) * 2.2, sp = 4 + Math.random() * 7;
+      vel.push(new THREE.Vector3(Math.cos(a) * sp, Math.sin(a) * sp, (Math.random() - 0.3) * 4));
+    }
+    var g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    var mat = new THREE.PointsMaterial({ size: 0.2, vertexColors: true, transparent: true, opacity: 1, depthWrite: false });
+    var pts = new THREE.Points(g, mat);
+    pts.frustumCulled = false;
+    scene.add(pts);
+    confetti.push({ pts: pts, vel: vel, age: 0, life: 2.8 });
+  }
+  function updateConfetti(dt) {
+    for (var j = confetti.length - 1; j >= 0; j--) {
+      var c = confetti[j];
+      c.age += dt;
+      var p = c.pts.geometry.attributes.position, arr = p.array;
+      for (var i = 0; i < c.vel.length; i++) {
+        var v = c.vel[i];
+        v.y -= 9 * dt; v.multiplyScalar(1 - 0.6 * dt);
+        arr[i * 3] += v.x * dt; arr[i * 3 + 1] += v.y * dt; arr[i * 3 + 2] += v.z * dt;
+      }
+      p.needsUpdate = true;
+      c.pts.material.opacity = Math.max(0, 1 - Math.pow(c.age / c.life, 2));
+      if (c.age >= c.life) {
+        scene.remove(c.pts);
+        c.pts.geometry.dispose(); c.pts.material.dispose();
+        confetti.splice(j, 1);
+      }
+    }
+  }
+
+  /* ===== 6. UI 事件監聽與結果呈現 ===== */
+  function showResult(r) {
+    $('rName').textContent = r.name;
+    var walk = Math.max(1, Math.round(r.distanceMeters / 80));
+    $('rMeta').textContent = r.distanceMeters + ' 公尺，步行約 ' + walk + ' 分鐘　' + r.priceRange;
+    var tags = $('rTags');
+    tags.innerHTML = '';
+    var all = [].concat(r.hasAC ? ['有冷氣'] : ['無冷氣'], r.categories);
+    all.forEach(function (t) {
+      var s = document.createElement('span');
+      s.className = 'tag'; s.textContent = t;
+      tags.appendChild(s);
+    });
+    $('rMap').href = r.googleMapUrl;
+    $('result-modal').classList.remove('hidden');
+  }
+  function hideModal() { $('result-modal').classList.add('hidden'); }
+
+  $('spinBtn').addEventListener('click', spin);
+  $('rAgain').addEventListener('click', function () { hideModal(); spin(); });
+  $('rRefilter').addEventListener('click', hideModal);
+  $('result-modal').addEventListener('click', function (e) { if (e.target === this) hideModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideModal(); });
+
+  /* 滑鼠拖曳旋轉 + 視差傾斜 */
+  var dragging = false, lastX = 0, tiltX = 0, tiltY = 0;
+  var el = renderer.domElement;
+  el.addEventListener('pointerdown', function (e) { dragging = true; lastX = e.clientX; });
+  window.addEventListener('pointerup', function () { dragging = false; });
+  window.addEventListener('pointermove', function (e) {
+    if (dragging && !spinning) { wheel.rotation.z -= (e.clientX - lastX) * 0.008; lastX = e.clientX; }
+    tiltY = (e.clientX / window.innerWidth - 0.5) * 0.35;
+    tiltX = (e.clientY / window.innerHeight - 0.5) * 0.25;
+  });
+
+  /* 版面：讓轉盤置中於「側邊欄以外」的可用區域 */
+  function layout() {
+    var W = window.innerWidth, H = window.innerHeight;
+    renderer.setSize(W, H);
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    var header = $('header').offsetHeight, side = $('sidebar');
+    var mobile = W <= 820, aw, ah, cx, cy;
+    if (mobile) { aw = W; ah = H - header - side.offsetHeight; cx = W / 2; cy = header + ah / 2; }
+    else { var used = side.offsetLeft + side.offsetWidth + 16; aw = W - used; ah = H - header; cx = used + aw / 2; cy = header + ah / 2; }
+    var ppu = H / (2 * Math.tan(THREE.MathUtils.degToRad(FOV / 2)) * CAM_Z);  // 每世界單位的像素
+    var s = Math.max(0.2, Math.min(1.6, 0.86 * Math.min(aw, ah) / (2 * (R + 0.7) * ppu)));
+    stage.scale.setScalar(s);
+    stage.position.set((cx - W / 2) / ppu, -(cy - H / 2) / ppu, 0);
+  }
+  window.addEventListener('resize', layout);
+
+  /* 主迴圈 */
+  var last = performance.now();
+  function animate(now) {
+    requestAnimationFrame(animate);
+    var dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+
+    if (spinAnim) {
+      var t = Math.min(1, (now - spinAnim.t0) / SPIN_MS);
+      wheel.rotation.z = spinAnim.r0 + (spinAnim.r1 - spinAnim.r0) * easeOutCubic(t);
+      if (t >= 1) { var k = spinAnim.k; spinAnim = null; finishSpin(k); }
+    } else if (!dragging) {
+      wheel.rotation.z -= 0.12 * dt;     // 微弱待機旋轉
+    }
+    stage.rotation.y += (tiltY - stage.rotation.y) * 0.06;
+    stage.rotation.x += (tiltX - stage.rotation.x) * 0.06;
+
+    updateConfetti(dt);
+    renderer.render(scene, camera);
+  }
+
+  layout();
+  applyFilters();
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
