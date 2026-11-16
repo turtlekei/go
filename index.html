@@ -16,6 +16,24 @@
 footer{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
 @media(max-width:640px){.booking-fab{right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:14px 18px}}
 @media(prefers-reduced-motion:reduce){.booking-fab{transition:none}.booking-fab:hover{transform:none}}
+/* 人來人往街景動畫 */
+.crowd-band{position:relative;overflow:hidden;background:linear-gradient(#f6ecdd,#fbf7ef 75%);border-top:1px solid #e9dfd2;border-bottom:1px solid #e9dfd2}
+.crowd{position:relative;height:190px}
+.crowd::before{content:"";position:absolute;left:0;right:0;bottom:0;height:36px;background:#e7dccb;border-top:2px solid #d9cbb6}
+.crowd-title{position:relative;z-index:1;text-align:center;padding-top:22px;font-size:clamp(1.05rem,2.4vw,1.4rem);font-weight:700;color:var(--brown);pointer-events:none}
+.walker{position:absolute;left:0;bottom:calc(36px + var(--y));animation:walk var(--d) linear infinite;animation-delay:var(--delay)}
+.walker.rev{animation-name:walk-rev}
+@keyframes walk{from{transform:translateX(-60px)}to{transform:translateX(calc(100vw + 60px))}}
+@keyframes walk-rev{from{transform:translateX(calc(100vw + 60px))}to{transform:translateX(-60px)}}
+.figure{display:flex;flex-direction:column;align-items:center;font-size:calc(var(--s) * 12px);animation:bob .5s ease-in-out infinite alternate}
+.figure .head{width:1.1em;height:1.1em;border-radius:50%;background:#f0c29a}
+.figure .body{width:1.5em;height:1.9em;margin-top:.1em;border-radius:.7em .7em .3em .3em;background:var(--c)}
+.figure .legs{display:flex;gap:.25em;margin-top:.1em}
+.figure .legs i{width:.4em;height:1.3em;background:#39291f;border-radius:.2em;transform-origin:top center;animation:step .5s ease-in-out infinite alternate}
+.figure .legs i:last-child{animation-delay:-.25s}
+@keyframes bob{to{transform:translateY(-2px)}}
+@keyframes step{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+@media(prefers-reduced-motion:reduce){.walker,.figure,.figure .legs i{animation:none}.walker{display:none}}
 </style>
 </head>
 <body>
@@ -27,6 +45,7 @@ footer{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
 </header>
 <main id="home">
 <section class="hero min-h-[590px] md:min-h-[680px] flex items-center text-white"><div class="max-w-7xl mx-auto px-6 w-full py-24"><div class="max-w-2xl"><p class="tracking-[.3em] text-[#f0b986] font-semibold mb-6">HANDMADE WITH HEART</p><h1 class="text-4xl md:text-6xl font-bold leading-[1.35] mb-7">金黃酥脆，<br>傳承手藝的極致美味。</h1><p class="text-lg md:text-xl text-[#f2e9dd] mb-10 leading-9">一口咬下的香氣，是我們對每一天的用心。<br>從新鮮食材到熱鍋起鍋，只為你記得的好味道。</p><div class="flex flex-wrap gap-4"><a href="#menu" class="btn">線上點餐</a><a href="#locations" class="border border-white rounded-full px-6 py-3 font-semibold hover:bg-white hover:text-[#39291f]">探索門市</a></div></div></div></section>
+<section class="crowd-band" aria-label="人來人往動態示意"><p class="crowd-title serif">門口人來人往，香氣引來好多客人</p><div id="crowdTrack" class="crowd" aria-hidden="true"></div></section>
 <section id="story" class="py-20 md:py-28"><div class="max-w-7xl mx-auto px-5 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center"><div class="relative"><img class="rounded-[30px] w-full h-[390px] md:h-[510px] object-cover" src="https://images.unsplash.com/photo-1555126634-323283e090fa?w=1100&q=85" alt="熱騰騰的手作料理" loading="lazy"><span class="absolute -bottom-5 right-5 bg-[#c76c30] text-white rounded-2xl p-5 serif text-xl">用心，藏在每一口。</span></div><div><p class="text-[#c76c30] font-bold tracking-widest mb-4">OUR STORY</p><h2 class="section-title mb-6">簡單的料理，<br>不簡單的堅持。</h2><p class="muted leading-9 mb-8">我們相信，真正令人懷念的味道，來自對細節的尊重。嚴選台灣在地豬肉、每日手工現包，掌握麵皮與火候的黃金比例，讓每顆鍋貼都有酥脆底部與鮮甜內餡。</p><div class="grid grid-cols-3 gap-3 border-t border-[#ded3c5] pt-8"><div><strong class="text-2xl md:text-3xl text-[#b95e27]">10,000+</strong><p class="text-xs md:text-sm muted mt-2">每日售出顆數*</p></div><div><strong class="text-2xl md:text-3xl text-[#b95e27]">100%</strong><p class="text-xs md:text-sm muted mt-2">現點現煎*</p></div><div><strong class="text-2xl md:text-3xl text-[#b95e27]">30 年</strong><p class="text-xs md:text-sm muted mt-2">工藝傳承*</p></div></div><p class="text-xs muted mt-5">*以上為網站示範文案，非真實營運數據。</p></div></div></section>
 <section id="menu" class="py-20 md:py-24 bg-[#f1e8dc]"><div class="max-w-7xl mx-auto px-5"><div class="text-center mb-10"><p class="text-[#c76c30] tracking-widest font-bold mb-3">SIGNATURE MENU</p><h2 class="section-title">人氣美味・現點現做</h2><p class="muted mt-4">從經典鍋貼到暖心湯品，每一道都值得細細品嚐。</p></div><div id="menuTabs" class="flex gap-2 overflow-x-auto pb-4 justify-start md:justify-center mb-8" role="tablist" aria-label="菜單分類"></div><div id="menuGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div></div></section>
 <section id="gifts" class="py-20 md:py-28"><div class="max-w-7xl mx-auto px-5 grid lg:grid-cols-2 gap-12 items-center"><div class="order-2 lg:order-1"><p class="text-[#c76c30] font-bold tracking-widest mb-4">FROZEN GIFT BOX</p><h2 class="section-title mb-6">把溫暖的好味道，<br>帶回家。</h2><p class="muted leading-9 mb-6">招牌招財鍋貼禮盒 50 入，適合家庭聚餐與節慶送禮。以急速冷凍工法保存風味，在家簡單料理，就能享受熟悉的香酥口感。</p><div class="space-y-3 mb-8"><p class="flex gap-3 items-center"><i data-lucide="snowflake" class="text-[#c76c30]"></i> 急速冷凍，鎖住鮮甜</p><p class="flex gap-3 items-center"><i data-lucide="clock-3" class="text-[#c76c30]"></i> 約 8 分鐘快速上桌（依設備調整）</p><p class="flex gap-3 items-center"><i data-lucide="gift" class="text-[#c76c30]"></i> 精緻包裝，送禮自用皆宜</p></div><div class="flex flex-wrap items-center gap-6"><span class="text-3xl font-bold">NT$ 599</span><button class="btn" data-add="gift50">加入購物車</button></div></div><img class="order-1 lg:order-2 rounded-[30px] w-full h-[390px] md:h-[520px] object-cover" src="https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=1100&q=85" alt="精選料理禮盒示意照片" loading="lazy"></div></section>
@@ -87,6 +106,8 @@ $('checkoutForm').addEventListener('submit',e=>{e.preventDefault();if(!e.target.
 $('newsletterForm').addEventListener('submit',e=>{e.preventDefault();toast('已完成訂閱示範（未實際傳送）');e.target.reset()});$('privacyBtn').addEventListener('click',()=>toast('本網站為示範頁，未連接後端或收集資料'));
 $('mobileMenuBtn').addEventListener('click',()=>{const hidden=$('mobileNav').classList.toggle('hidden');$('mobileMenuBtn').setAttribute('aria-expanded',String(!hidden))});$('mobileNav').addEventListener('click',e=>{if(e.target.closest('a')){$('mobileNav').classList.add('hidden');$('mobileMenuBtn').setAttribute('aria-expanded','false')}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){showLayer('cartLayer',false);closeCheckout()}});
-$('year').textContent=new Date().getFullYear();renderMenu();renderStore();renderFaq();updateCart();icons();
+// 產生街景中的行人：分三層深度，速度與大小略有不同，部分往反方向走。
+function buildCrowd(){const wrap=$('crowdTrack');if(!wrap)return;const colors=['#c76c30','#39291f','#e9a467','#7a5a43','#b95e27','#5b4636','#d08a4e'];const lanes=[{y:0,s:1.1,d:12},{y:22,s:.95,d:17},{y:44,s:.8,d:24}];const n=15;let html='';for(let i=0;i<n;i++){const l=lanes[i%3];const d=(l.d+(i%4)*1.3).toFixed(1);const delay=(-(((i*7)%n)/n)*Number(d)).toFixed(2);const rev=i%2?' rev':'';html+=`<div class="walker${rev}" style="--y:${l.y}px;--s:${l.s};--d:${d}s;--delay:${delay}s;--c:${colors[i%colors.length]}"><div class="figure"><span class="head"></span><span class="body"></span><span class="legs"><i></i><i></i></span></div></div>`}wrap.innerHTML=html}
+buildCrowd();$('year').textContent=new Date().getFullYear();renderMenu();renderStore();renderFaq();updateCart();icons();
 </script>
 </body></html>
