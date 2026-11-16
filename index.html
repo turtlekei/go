@@ -4,6 +4,12 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="金邊鍋貼｜每日現包、現點現煎，品嚐金黃酥脆的好味道。">
 <title>金邊鍋貼｜一口金黃，滿心溫暖</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#39291f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="金邊鍋貼">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@500;600;700&display=swap" rel="stylesheet">
@@ -107,5 +113,11 @@ $('newsletterForm').addEventListener('submit',e=>{e.preventDefault();toast('已�
 $('mobileMenuBtn').addEventListener('click',()=>{const hidden=$('mobileNav').classList.toggle('hidden');$('mobileMenuBtn').setAttribute('aria-expanded',String(!hidden))});$('mobileNav').addEventListener('click',e=>{if(e.target.closest('a')){$('mobileNav').classList.add('hidden');$('mobileMenuBtn').setAttribute('aria-expanded','false')}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){showLayer('cartLayer',false);closeCheckout()}});
 $('year').textContent=new Date().getFullYear();renderMenu();renderStore();renderFaq();updateCart();icons();
+</script>
+<script>
+// 註冊 Service Worker（需在 https 或 localhost 才會生效）。
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
 </body></html>
