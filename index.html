@@ -65,10 +65,14 @@ footer{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important}
 <!-- 購物車抽屜 -->
 <div id="cartLayer" class="fixed inset-0 z-50 hidden" aria-hidden="true"><div id="cartOverlay" class="drawer-overlay absolute inset-0"></div><aside class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#fbf7ef] shadow-2xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="cartTitle"><div class="flex justify-between items-center p-6 border-b"><h2 id="cartTitle" class="text-2xl font-bold serif">我的購物車</h2><button id="closeCart" aria-label="關閉購物車"><i data-lucide="x"></i></button></div><div id="cartItems" class="flex-1 overflow-y-auto p-6 space-y-5"></div><div class="p-6 border-t bg-white"><div class="flex justify-between mb-2"><span>商品小計</span><strong id="subtotal">NT$ 0</strong></div><p class="muted text-xs mb-5">運費與其他費用將於實際結帳時確認（本頁僅示範）。</p><div class="flex justify-between text-xl font-bold mb-5"><span>總金額</span><span id="total">NT$ 0</span></div><button id="checkoutBtn" class="btn w-full">前往結帳</button></div></aside></div>
 <!-- 模擬結帳與成功畫面 -->
-<div id="checkoutLayer" class="fixed inset-0 z-[60] hidden bg-[#1e150eb3] p-4 overflow-y-auto" aria-hidden="true"><div class="min-h-full flex items-center justify-center py-6"><div class="bg-[#fbf7ef] rounded-3xl w-full max-w-lg p-6 md:p-9 relative" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle"><button id="closeCheckout" class="absolute top-5 right-5" aria-label="關閉結帳視窗"><i data-lucide="x"></i></button><div id="checkoutFormWrap"><h2 id="checkoutTitle" class="serif text-2xl font-bold mb-2">確認訂單</h2><p class="muted text-sm mb-6">這是展示用模擬結帳，不會送出真實訂單或付款。</p><form id="checkoutForm" class="space-y-4"><fieldset><legend class="font-semibold mb-2">取餐方式</legend><div class="flex flex-wrap gap-4 text-sm"><label><input type="radio" name="fulfillment" value="外帶" checked> 外帶</label><label><input type="radio" name="fulfillment" value="內用"> 內用</label><label><input type="radio" name="fulfillment" value="宅配"> 宅配</label></div></fieldset><div><label for="customerName" class="block text-sm mb-1">聯絡姓名</label><input id="customerName" required maxlength="60" autocomplete="name" class="w-full rounded-xl border p-3" placeholder="請輸入姓名"></div><div><label for="customerPhone" class="block text-sm mb-1">聯絡電話</label><input id="customerPhone" required inputmode="tel" type="tel" pattern="[0-9+()\- ]{8,20}" class="w-full rounded-xl border p-3" placeholder="例如 0912345678"></div><div id="addressWrap" hidden><label for="customerAddress" class="block text-sm mb-1">宅配地址</label><input id="customerAddress" class="w-full rounded-xl border p-3" placeholder="請輸入收件地址"></div><div class="flex justify-between font-bold border-t pt-4"><span>模擬訂單金額（未含運費）</span><span id="checkoutTotal"></span></div><button type="submit" class="btn w-full">建立模擬訂單</button></form></div><div id="checkoutSuccess" hidden class="text-center py-8"><i data-lucide="check-circle-2" class="w-16 h-16 text-green-700 mx-auto mb-5"></i><h2 class="serif text-2xl font-bold mb-4">訂單已建立（模擬）</h2><p class="muted leading-8 mb-7">您的購物車已清空。<br>此為前端展示，商家不會收到訂單。</p><button id="successDone" class="btn">返回網站</button></div></div></div></div>
+<div id="checkoutLayer" class="fixed inset-0 z-[60] hidden bg-[#1e150eb3] p-4 overflow-y-auto" aria-hidden="true"><div class="min-h-full flex items-center justify-center py-6"><div class="bg-[#fbf7ef] rounded-3xl w-full max-w-lg p-6 md:p-9 relative" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle"><button id="closeCheckout" class="absolute top-5 right-5" aria-label="關閉結帳視窗"><i data-lucide="x"></i></button><div id="checkoutFormWrap"><h2 id="checkoutTitle" class="serif text-2xl font-bold mb-2">確認訂單</h2><p class="muted text-sm mb-6">請確認訂單內容，送出後由門市與你確認。本頁不收款。</p><form id="checkoutForm" class="space-y-4"><fieldset><legend class="font-semibold mb-2">取餐方式</legend><div class="flex flex-wrap gap-4 text-sm"><label><input type="radio" name="fulfillment" value="外帶" checked> 外帶</label><label><input type="radio" name="fulfillment" value="內用"> 內用</label><label><input type="radio" name="fulfillment" value="宅配"> 宅配</label></div></fieldset><div><label for="customerName" class="block text-sm mb-1">聯絡姓名</label><input id="customerName" required maxlength="60" autocomplete="name" class="w-full rounded-xl border p-3" placeholder="請輸入姓名"></div><div><label for="customerPhone" class="block text-sm mb-1">聯絡電話</label><input id="customerPhone" required inputmode="tel" type="tel" pattern="[0-9+()\- ]{8,20}" class="w-full rounded-xl border p-3" placeholder="例如 0912345678"></div><div id="addressWrap" hidden><label for="customerAddress" class="block text-sm mb-1">宅配地址</label><input id="customerAddress" class="w-full rounded-xl border p-3" placeholder="請輸入收件地址"></div><div class="flex justify-between font-bold border-t pt-4"><span>模擬訂單金額（未含運費）</span><span id="checkoutTotal"></span></div><button type="submit" class="btn w-full">送出訂單</button></form></div><div id="checkoutSuccess" hidden class="text-center py-8"><i data-lucide="check-circle-2" class="w-16 h-16 text-green-700 mx-auto mb-5"></i><h2 class="serif text-2xl font-bold mb-4">訂單已送出</h2><p id="successMsg" class="muted leading-8 mb-7">您的購物車已清空。</p><button id="successDone" class="btn">返回網站</button></div></div></div></div>
 <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[80] hidden bg-[#39291f] text-white px-6 py-3 rounded-full shadow-xl text-sm" role="status" aria-live="polite"></div>
 <script>
 'use strict';
+// 線上訂單接收設定（Google Apps Script，見 apps-script/README.md）。
+// ORDER_API 留空時，結帳維持展示模式，不會送出訂單。
+const ORDER_API='';
+const ORDER_TOKEN='d35bfeef0325e50132ee2fb9476d60c8';
 // 示範商品資料：價格與品名可依實際營運需求替換。
 const imageA='https://images.unsplash.com/photo-1563245372-f21724e3856d?w=700&q=85';
 const imageB='https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=700&q=85';
@@ -108,7 +112,28 @@ $('cartBtn').addEventListener('click',()=>showLayer('cartLayer',true));$('closeC
 $('checkoutBtn').addEventListener('click',()=>{if(!cartCount())return;$('checkoutTotal').textContent=money(cartSum());$('checkoutFormWrap').hidden=false;$('checkoutSuccess').hidden=true;showLayer('cartLayer',false);showLayer('checkoutLayer',true)});
 function closeCheckout(){showLayer('checkoutLayer',false)}$('closeCheckout').addEventListener('click',closeCheckout);$('successDone').addEventListener('click',closeCheckout);$('checkoutLayer').addEventListener('click',e=>{if(e.target===$('checkoutLayer'))closeCheckout()});
 $('checkoutForm').addEventListener('change',()=>{const isDelivery=document.querySelector('input[name="fulfillment"]:checked').value==='宅配';$('addressWrap').hidden=!isDelivery;$('customerAddress').required=isDelivery});
-$('checkoutForm').addEventListener('submit',e=>{e.preventDefault();if(!e.target.reportValidity())return;cart={};updateCart();e.target.reset();$('addressWrap').hidden=true;$('customerAddress').required=false;$('checkoutFormWrap').hidden=true;$('checkoutSuccess').hidden=false;icons()});
+// 送出訂單：有設定 ORDER_API 時寫入 Google 試算表；否則維持展示模式。
+$('checkoutForm').addEventListener('submit',async e=>{
+e.preventDefault();if(!e.target.reportValidity())return;
+const btn=e.target.querySelector('button[type="submit"]');
+const items=Object.entries(cart).filter(([,q])=>q>0).map(([id,qty])=>({id,qty}));
+let orderNo='';btn.disabled=true;
+try{
+if(ORDER_API){
+const res=await fetch(ORDER_API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:ORDER_TOKEN,fulfillment:document.querySelector('input[name="fulfillment"]:checked').value,name:$('customerName').value.trim(),phone:$('customerPhone').value.trim(),address:$('customerAddress').value.trim(),items})});
+const data=await res.json();
+if(!data.ok)throw new Error(data.error||'送出失敗');
+orderNo=data.orderNo;
+}
+}catch(err){
+toast(err instanceof TypeError?'網路連線異常，請稍後再試':'送出失敗：'+err.message);
+btn.disabled=false;return;
+}
+btn.disabled=false;
+cart={};updateCart();e.target.reset();$('addressWrap').hidden=true;$('customerAddress').required=false;$('checkoutFormWrap').hidden=true;$('checkoutSuccess').hidden=false;
+$('successMsg').textContent=orderNo?`訂單編號：${orderNo}。門市會與你確認，請留意來電。`:'您的購物車已清空。';
+icons();
+});
 $('newsletterForm').addEventListener('submit',e=>{e.preventDefault();toast('已完成訂閱示範（未實際傳送）');e.target.reset()});$('privacyBtn').addEventListener('click',()=>toast('本網站為示範頁，未連接後端或收集資料'));
 $('mobileMenuBtn').addEventListener('click',()=>{const hidden=$('mobileNav').classList.toggle('hidden');$('mobileMenuBtn').setAttribute('aria-expanded',String(!hidden))});$('mobileNav').addEventListener('click',e=>{if(e.target.closest('a')){$('mobileNav').classList.add('hidden');$('mobileMenuBtn').setAttribute('aria-expanded','false')}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){showLayer('cartLayer',false);closeCheckout()}});
