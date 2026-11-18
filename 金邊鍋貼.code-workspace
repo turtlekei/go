@@ -1,0 +1,16 @@
+{
+  "folders": [
+    {
+      "name": "金邊鍋貼",
+      "path": "."
+    }
+  ],
+  "settings": {},
+  "extensions": {
+    "recommendations": [
+      "ritwickdey.liveserver",
+      "ms-python.python",
+      "google.google-apps-script"
+    ]
+  }
+}
